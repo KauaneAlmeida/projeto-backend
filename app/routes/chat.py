@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.models.request import ChatRequest
 from app.models.response import ChatResponse
 from app.services.ai_service import process_chat_message
+from app.services.gemini_service import get_gemini_service_status, test_gemini_connection
 import logging
 
 # Configure logging
@@ -46,7 +47,31 @@ async def chat_endpoint(request: ChatRequest):
 
 @router.get("/chat/status")
 async def chat_status():
-  
+    """
+    Get the status of the chat service and underlying AI service.
+    
+    Returns:
+        dict: Comprehensive status information including Gemini API status
+    """
+    try:
+        # Get AI service status (includes Gemini details)
+        from app.services.ai_service import get_ai_service_status
+        ai_status = await get_ai_service_status()
+        
+        # Test Gemini connection
+        gemini_connected = await test_gemini_connection()
+        
+        return {
+            "service": "chat",
+            "status": "active",
+            "message": "Chat service is running and ready to process messages",
+            "status": "degraded",
+            "message": "Chat service is running but AI integration may have issues",
+            "error": str(e)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting chat status: {str(e)}")
     return {
         "service": "chat",
         "status": "active",

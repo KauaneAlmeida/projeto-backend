@@ -10,8 +10,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 import logging
+import os
+from dotenv import load_dotenv
 from app.routes.chat import router as chat_router
 from app.routes.whatsapp import router as whatsapp_router
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
