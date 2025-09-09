@@ -43,6 +43,7 @@ app.add_middleware(
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(whatsapp_router, prefix="/api/v1")
 app.include_router(conversation_router, prefix="/api/v1")
+app.include_router(conversation_router, prefix="/api/v1")
 
 # Health check endpoint
 @app.get("/health")

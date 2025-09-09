@@ -212,10 +212,11 @@
                 
                 const data = await response.json();
                 
-                // Display the response
-                responseBox.textContent = `Reply: ${data.reply}\n\nTimestamp: ${data.timestamp}\nModel: ${data.model_used}\nConfidence: ${data.confidence}`;
-                responseBox.className = 'response-box';
+                    // Display the response
+                    responseBox.textContent = `Reply: ${data.reply}\n\nTimestamp: ${data.timestamp}\nModel: ${data.model_used}\nConfidence: ${data.confidence}`;
+                }
                 
+                responseBox.className = 'response-box';
                 // Clear the input
                 messageInput.value = '';
                 

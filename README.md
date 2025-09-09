@@ -282,6 +282,10 @@ The codebase follows Python best practices:
 - `PORT`: Server port (default: 8000)
 - `HOST`: Server host (default: 0.0.0.0)
 - `DEBUG`: Enable debug mode (default: False)
+- `GEMINI_API_KEY`: Google Gemini API key for AI responses
+- `FIREBASE_PROJECT_ID`: Firebase project identifier
+- `FIREBASE_CLIENT_EMAIL`: Firebase service account email
+- `FIREBASE_PRIVATE_KEY`: Firebase service account private key
 
 ### CORS Configuration
 
