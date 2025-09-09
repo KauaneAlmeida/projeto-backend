@@ -1,23 +1,280 @@
-# FastAPI Backend Dependencies
-# Core framework and server
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Backend - Test Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #dd108f;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .response-section {
+            margin-top: 30px;
+        }
+        .response-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .loading {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.online {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.offline {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .conversation-mode {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            color: #0066cc;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .ai-mode {
+            background-color: #f0f8e7;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .step-indicator {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Chat Backend - Test Interface</h1>
+        
+        <div id="status" class="status">Checking backend status...</div>
+        
+        <div id="conversationMode" class="conversation-mode" style="display: none;">
+            <div id="stepIndicator" class="step-indicator"></div>
+            <div id="modeText">Guided Intake Mode</div>
+        </div>
+        
+        <div class="input-section">
+            <label for="messageInput">Enter your message:</label>
+            <input type="text" id="messageInput" placeholder="Type your message here..." />
+            <button id="sendButton" onclick="sendMessage()">Send Message</button>
+            <button id="startConversationButton" onclick="startConversation()" style="margin-left: 10px; background-color: #28a745;">Start Intake</button>
+        </div>
+        
+        <div class="response-section">
+            <label>AI Response:</label>
+            <div id="responseBox" class="response-box">No messages sent yet.</div>
+        </div>
+    </div>
 
-# Data validation and parsing
-pydantic==2.5.0
-
-# Additional useful packages for production
-python-multipart==0.0.6  # For form data parsing
-python-json-logger==2.0.7  # For structured logging
-httpx==0.25.2  # For async HTTP requests to external APIs
-python-dotenv==1.0.0  # For environment variable management
-firebase-admin==6.4.0  # For Firebase integration
-
-# Optional: Uncomment when integrating with AI services
-# openai==1.3.5  # For OpenAI integration
-# anthropic==0.7.7  # For Anthropic Claude integration
-
-# Development dependencies (install with: pip install -r requirements-dev.txt)
-# pytest==7.4.3
-# pytest-asyncio==0.21.1
-# httpx==0.25.2  # For testing FastAPI endpoints
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        let currentSessionId = null;
+        let conversationMode = false;
+        
+        // Check backend status on page load
+        window.addEventListener('load', checkBackendStatus);
+        
+        // Allow Enter key to send message
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        async function checkBackendStatus() {
+            const statusDiv = document.getElementById('status');
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.textContent = `✅ Backend Status: ${data.status} - ${data.message}`;
+                    statusDiv.className = 'status online';
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusDiv.textContent = `❌ Backend Status: Offline - ${error.message}`;
+                statusDiv.className = 'status offline';
+            }
+        }
+        
+        async function startConversation() {
+            const responseBox = document.getElementById('responseBox');
+            const conversationModeDiv = document.getElementById('conversationMode');
+            const modeText = document.getElementById('modeText');
+            const stepIndicator = document.getElementById('stepIndicator');
+            const startButton = document.getElementById('startConversationButton');
+            
+            try {
+                startButton.disabled = true;
+                startButton.textContent = 'Starting...';
+                responseBox.textContent = 'Starting guided intake process...';
+                responseBox.className = 'response-box loading';
+                
+                const response = await fetch(`${API_BASE_URL}/api/v1/conversation/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update UI for conversation mode
+                currentSessionId = data.session_id;
+                conversationMode = true;
+                
+                conversationModeDiv.style.display = 'block';
+                modeText.textContent = 'Guided Intake Mode - Please answer each question';
+                stepIndicator.textContent = `Step ${data.step_id} of ${data.is_final_step ? data.step_id : 'several'}`;
+                
+                responseBox.textContent = data.question;
+                responseBox.className = 'response-box';
+                
+                // Update input placeholder
+                document.getElementById('messageInput').placeholder = 'Type your answer here...';
+                
+            } catch (error) {
+                console.error('Error starting conversation:', error);
+                responseBox.textContent = `Error: ${error.message}`;
+                responseBox.className = 'response-box error';
+            } finally {
+                startButton.disabled = false;
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const responseBox = document.getElementById('responseBox');
+            const sendButton = document.getElementById('sendButton');
+            
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            // Disable button and show loading state
+            sendButton.disabled = true;
+            sendButton.textContent = 'Sending...';
+            responseBox.textContent = 'Processing your message...';
+            responseBox.className = 'response-box loading';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        user_id: 'test_user',
+                        session_id: 'test_session'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Display the response
+                responseBox.textContent = `Reply: ${data.reply}\n\nTimestamp: ${data.timestamp}\nModel: ${data.model_used}\nConfidence: ${data.confidence}`;
+                responseBox.className = 'response-box';
+                
+                // Clear the input
+                messageInput.value = '';
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                responseBox.textContent = `Error: ${error.message}\n\nPlease check that your FastAPI backend is running on http://127.0.0.1:8000`;
+                responseBox.className = 'response-box error';
+            } finally {
+                // Re-enable button
+                sendButton.disabled = false;
+                sendButton.textContent = 'Send Message';
+            }
+        }
+    </script>
+</body>
+</html>
