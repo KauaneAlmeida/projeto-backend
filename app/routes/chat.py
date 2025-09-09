@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, status
 from app.models.request import ChatRequest
 from app.models.response import ChatResponse
 from app.services.ai_service import process_chat_message
-from app.services.gemini_service import get_gemini_service_status, test_gemini_connection
+from app.services.ai_service import get_ai_service_status
+from app.services.ai_chain import clear_conversation_memory
 import logging
 
 # Configure logging
@@ -26,7 +27,12 @@ async def chat_endpoint(request: ChatRequest):
             )
         
         # Process the message through AI service
-        ai_reply = await process_chat_message(request.message)
+        # Use LangChain by default for enhanced conversation experience
+        ai_reply = await process_chat_message(
+            message=request.message,
+            use_langchain=True,
+            session_id=request.session_id
+        )
         
         # Create and return response
         response = ChatResponse(reply=ai_reply)
@@ -48,32 +54,34 @@ async def chat_endpoint(request: ChatRequest):
 @router.get("/chat/status")
 async def chat_status():
     """
-    Get the status of the chat service and underlying AI service.
+    Get the status of the chat service and underlying AI services (LangChain + Gemini).
     
     Returns:
-        dict: Comprehensive status information including Gemini API status
+        dict: Comprehensive status information including LangChain and Gemini status
     """
     try:
-        # Get AI service status (includes Gemini details)
-        from app.services.ai_service import get_ai_service_status
+        # Get comprehensive AI service status
         ai_status = await get_ai_service_status()
-        
-        # Test Gemini connection
-        gemini_connected = await test_gemini_connection()
         
         return {
             "service": "chat",
-            "status": "active",
-            "message": "Chat service is running and ready to process messages",
-            "status": "degraded",
-            "message": "Chat service is running but AI integration may have issues",
-            "error": str(e)
+            "status": "active" if ai_status["status"] in ["active", "degraded"] else "configuration_required",
+            "message": "Chat service is running with LangChain + Gemini integration",
+            "ai_integration": ai_status,
+            "features": [
+                "langchain_conversation_memory",
+                "system_prompt_support",
+                "gemini_api_integration",
+                "automatic_fallback",
+                "session_management",
+                "brazilian_portuguese_responses"
+            ],
+            "endpoints": {
+                "chat": "/api/v1/chat",
+                "status": "/api/v1/chat/status",
+                "clear_memory": "/api/v1/chat/clear-memory"
+            }
         }
         
     except Exception as e:
         logger.error(f"Error getting chat status: {str(e)}")
-    return {
-        "service": "chat",
-        "status": "active",
-        "message": "Chat service is running and ready to process messages"
-    }

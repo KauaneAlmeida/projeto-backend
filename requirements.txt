@@ -221,6 +221,10 @@
                 responseBox.className = 'response-box error';
             } finally {
                 startButton.disabled = false;
+                startButton.textContent = 'Start Intake';
+            }
+        }
+        
         async function sendMessage() {
             const messageInput = document.getElementById('messageInput');
             const responseBox = document.getElementById('responseBox');
