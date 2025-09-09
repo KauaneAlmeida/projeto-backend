@@ -98,6 +98,25 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        .conversation-mode {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            color: #0066cc;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .ai-mode {
+            background-color: #f0f8e7;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .step-indicator {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -106,10 +125,16 @@
         
         <div id="status" class="status">Checking backend status...</div>
         
+        <div id="conversationMode" class="conversation-mode" style="display: none;">
+            <div id="stepIndicator" class="step-indicator"></div>
+            <div id="modeText">Guided Intake Mode</div>
+        </div>
+        
         <div class="input-section">
             <label for="messageInput">Enter your message:</label>
             <input type="text" id="messageInput" placeholder="Type your message here..." />
             <button id="sendButton" onclick="sendMessage()">Send Message</button>
+            <button id="startConversationButton" onclick="startConversation()" style="margin-left: 10px; background-color: #28a745;">Start Intake</button>
         </div>
         
         <div class="response-section">
@@ -120,6 +145,8 @@
 
     <script>
         const API_BASE_URL = 'http://127.0.0.1:8000';
+        let currentSessionId = null;
+        let conversationMode = false;
         
         // Check backend status on page load
         window.addEventListener('load', checkBackendStatus);

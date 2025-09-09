@@ -137,3 +137,82 @@ class HealthResponse(BaseModel):
                 "timestamp": "2024-01-15T10:30:00.000Z"
             }
         }
+
+class ConversationResponse(BaseModel):
+    """
+    Model for conversation flow responses.
+    
+    Attributes:
+        session_id (str): Session identifier
+        question (Optional[str]): Next question in the flow
+        response (Optional[str]): AI response (when in AI mode)
+        step_id (Optional[int]): Current step ID
+        is_final_step (Optional[bool]): Whether this is the final step
+        flow_completed (bool): Whether the guided flow is completed
+        ai_mode (bool): Whether conversation is in AI mode
+        lead_saved (Optional[bool]): Whether lead data was saved
+        lead_id (Optional[str]): ID of saved lead
+    """
+    
+    session_id: str = Field(
+        ...,
+        description="Session identifier",
+        example="session_abc123"
+    )
+    
+    question: Optional[str] = Field(
+        None,
+        description="Next question in the guided flow",
+        example="What is your full name?"
+    )
+    
+    response: Optional[str] = Field(
+        None,
+        description="AI response when in AI mode",
+        example="Thank you for your information. How can I help you further?"
+    )
+    
+    step_id: Optional[int] = Field(
+        None,
+        description="Current step ID in the flow",
+        example=1
+    )
+    
+    is_final_step: Optional[bool] = Field(
+        False,
+        description="Whether this is the final step in the flow"
+    )
+    
+    flow_completed: bool = Field(
+        False,
+        description="Whether the guided flow is completed"
+    )
+    
+    ai_mode: bool = Field(
+        False,
+        description="Whether conversation is in AI mode"
+    )
+    
+    lead_saved: Optional[bool] = Field(
+        None,
+        description="Whether lead data was successfully saved"
+    )
+    
+    lead_id: Optional[str] = Field(
+        None,
+        description="ID of the saved lead record",
+        example="lead_xyz789"
+    )
+
+    class Config:
+        """Pydantic configuration."""
+        json_schema_extra = {
+            "example": {
+                "session_id": "session_abc123",
+                "question": "What is your full name?",
+                "step_id": 1,
+                "is_final_step": False,
+                "flow_completed": False,
+                "ai_mode": False
+            }
+        }
