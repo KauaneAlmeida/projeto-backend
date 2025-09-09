@@ -4,6 +4,7 @@ from app.models.response import ChatResponse
 from app.services.ai_service import process_chat_message
 from app.services.ai_service import get_ai_service_status
 from app.services.ai_chain import clear_conversation_memory
+from app.services.ai_chain import clear_conversation_memory
 import logging
 
 # Configure logging
@@ -28,6 +29,11 @@ async def chat_endpoint(request: ChatRequest):
         
         # Process the message through AI service
         # Use LangChain by default for enhanced conversation experience
+        ai_reply = await process_chat_message(
+            message=request.message,
+            use_langchain=True,
+            session_id=request.session_id
+        )
         ai_reply = await process_chat_message(
             message=request.message,
             use_langchain=True,
@@ -59,10 +65,6 @@ async def chat_status():
     Returns:
         dict: Comprehensive status information including LangChain and Gemini status
     """
-    try:
-        # Get comprehensive AI service status
-        ai_status = await get_ai_service_status()
-        
         return {
             "service": "chat",
             "status": "active" if ai_status["status"] in ["active", "degraded"] else "configuration_required",
@@ -70,6 +72,17 @@ async def chat_status():
             "ai_integration": ai_status,
             "features": [
                 "langchain_conversation_memory",
+                "system_prompt_support",
+                "gemini_api_integration",
+                "automatic_fallback",
+                "session_management",
+                "brazilian_portuguese_responses"
+            ],
+            "endpoints": {
+                "chat": "/api/v1/chat",
+                "status": "/api/v1/chat/status",
+                "clear_memory": "/api/v1/chat/clear-memory"
+            }
                 "system_prompt_support",
                 "gemini_api_integration",
                 "automatic_fallback",
