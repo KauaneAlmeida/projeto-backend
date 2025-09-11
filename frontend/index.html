@@ -117,6 +117,43 @@
             color: #6c757d;
             margin-bottom: 10px;
         }
+        .whatsapp-section {
+            background-color: #e8f5e8;
+            border: 1px solid #25d366;
+            color: #075e54;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-code img {
+            max-width: 300px;
+            border: 2px solid #25d366;
+            border-radius: 8px;
+        }
+        .whatsapp-status {
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .button-group button {
+            flex: 1;
+            min-width: 120px;
+        }
+        .whatsapp-button {
+            background-color: #25d366;
+        }
+        .whatsapp-button:hover {
+            background-color: #128c7e;
+        }
     </style>
 </head>
 <body>
@@ -130,11 +167,30 @@
             <div id="modeText">Guided Intake Mode</div>
         </div>
         
+        <div id="whatsappSection" class="whatsapp-section" style="display: none;">
+            <h3>🟢 WhatsApp Integration (Evolution API)</h3>
+            <div id="whatsappStatus" class="whatsapp-status">Checking WhatsApp status...</div>
+            <div id="qrCodeContainer" class="qr-code" style="display: none;">
+                <p>Scan this QR code with WhatsApp to connect:</p>
+                <img id="qrCodeImage" src="" alt="WhatsApp QR Code" />
+                <p><small>Open WhatsApp → Settings → Linked Devices → Link a Device</small></p>
+            </div>
+            <div class="button-group">
+                <button id="initWhatsAppButton" onclick="initializeWhatsApp()" class="whatsapp-button">Initialize WhatsApp</button>
+                <button id="getQRButton" onclick="getQRCode()" class="whatsapp-button">Get QR Code</button>
+                <button id="checkStatusButton" onclick="checkWhatsAppStatus()" class="whatsapp-button">Check Status</button>
+                <button id="sendTestButton" onclick="sendTestMessage()" class="whatsapp-button">Send Test Message</button>
+            </div>
+        </div>
+        
         <div class="input-section">
             <label for="messageInput">Enter your message:</label>
             <input type="text" id="messageInput" placeholder="Type your message here..." />
-            <button id="sendButton" onclick="sendMessage()">Send Message</button>
-            <button id="startConversationButton" onclick="startConversation()" style="margin-left: 10px; background-color: #28a745;">Start Intake</button>
+            <div class="button-group">
+                <button id="sendButton" onclick="sendMessage()">Send Message</button>
+                <button id="startConversationButton" onclick="startConversation()" style="background-color: #28a745;">Start Intake</button>
+                <button id="toggleWhatsAppButton" onclick="toggleWhatsAppSection()" class="whatsapp-button">WhatsApp Setup</button>
+            </div>
         </div>
         
         <div class="response-section">
@@ -147,9 +203,13 @@
         const API_BASE_URL = 'http://127.0.0.1:8000';
         let currentSessionId = null;
         let conversationMode = false;
+        let whatsappSectionVisible = false;
         
         // Check backend status on page load
-        window.addEventListener('load', checkBackendStatus);
+        window.addEventListener('load', function() {
+            checkBackendStatus();
+            checkWhatsAppStatus();
+        });
         
         // Allow Enter key to send message
         document.getElementById('messageInput').addEventListener('keypress', function(e) {
@@ -172,6 +232,158 @@
             } catch (error) {
                 statusDiv.textContent = `❌ Backend Status: Offline - ${error.message}`;
                 statusDiv.className = 'status offline';
+            }
+        }
+        
+        function toggleWhatsAppSection() {
+            const whatsappSection = document.getElementById('whatsappSection');
+            const toggleButton = document.getElementById('toggleWhatsAppButton');
+            
+            whatsappSectionVisible = !whatsappSectionVisible;
+            
+            if (whatsappSectionVisible) {
+                whatsappSection.style.display = 'block';
+                toggleButton.textContent = 'Hide WhatsApp';
+                checkWhatsAppStatus();
+            } else {
+                whatsappSection.style.display = 'none';
+                toggleButton.textContent = 'WhatsApp Setup';
+            }
+        }
+        
+        async function checkWhatsAppStatus() {
+            const statusDiv = document.getElementById('whatsappStatus');
+            try {
+                statusDiv.textContent = 'Checking WhatsApp status...';
+                
+                const response = await fetch(`${API_BASE_URL}/api/v1/whatsapp/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const evolutionStatus = data.evolution_api || {};
+                    const instanceStatus = evolutionStatus.instance_status || {};
+                    
+                    let statusText = `Status: ${data.status}\n`;
+                    statusText += `API: ${evolutionStatus.api_accessible ? '✅ Connected' : '❌ Disconnected'}\n`;
+                    statusText += `Instance: ${instanceStatus.state || 'Unknown'}\n`;
+                    statusText += `Instance Name: ${evolutionStatus.instance_name || 'N/A'}`;
+                    
+                    statusDiv.textContent = statusText;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusDiv.textContent = `❌ WhatsApp Status: Error - ${error.message}`;
+            }
+        }
+        
+        async function initializeWhatsApp() {
+            const initButton = document.getElementById('initWhatsAppButton');
+            const statusDiv = document.getElementById('whatsappStatus');
+            const qrContainer = document.getElementById('qrCodeContainer');
+            const qrImage = document.getElementById('qrCodeImage');
+            
+            try {
+                initButton.disabled = true;
+                initButton.textContent = 'Initializing...';
+                statusDiv.textContent = 'Initializing WhatsApp instance...';
+                
+                const response = await fetch(`${API_BASE_URL}/api/v1/whatsapp/initialize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                statusDiv.textContent = `Status: ${data.status}\nMessage: ${data.message}`;
+                
+                // Show QR code if available
+                if (data.qr_code && data.qr_code.base64) {
+                    qrImage.src = data.qr_code.base64;
+                    qrContainer.style.display = 'block';
+                } else if (data.status === 'connected') {
+                    qrContainer.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('Error initializing WhatsApp:', error);
+                statusDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                initButton.disabled = false;
+                initButton.textContent = 'Initialize WhatsApp';
+            }
+        }
+        
+        async function getQRCode() {
+            const qrButton = document.getElementById('getQRButton');
+            const statusDiv = document.getElementById('whatsappStatus');
+            const qrContainer = document.getElementById('qrCodeContainer');
+            const qrImage = document.getElementById('qrCodeImage');
+            
+            try {
+                qrButton.disabled = true;
+                qrButton.textContent = 'Getting QR...';
+                statusDiv.textContent = 'Getting QR code...';
+                
+                const response = await fetch(`${API_BASE_URL}/api/v1/whatsapp/qr`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.base64) {
+                    qrImage.src = data.base64;
+                    qrContainer.style.display = 'block';
+                    statusDiv.textContent = 'QR code ready! Scan with WhatsApp.';
+                } else {
+                    statusDiv.textContent = 'QR code not available. Instance may already be connected.';
+                }
+                
+            } catch (error) {
+                console.error('Error getting QR code:', error);
+                statusDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                qrButton.disabled = false;
+                qrButton.textContent = 'Get QR Code';
+            }
+        }
+        
+        async function sendTestMessage() {
+            const testButton = document.getElementById('sendTestButton');
+            const statusDiv = document.getElementById('whatsappStatus');
+            
+            try {
+                testButton.disabled = true;
+                testButton.textContent = 'Sending...';
+                statusDiv.textContent = 'Sending test message...';
+                
+                const response = await fetch(`${API_BASE_URL}/api/v1/evolution/send-test-message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                statusDiv.textContent = `Test message sent to ${data.target_number}!`;
+                
+            } catch (error) {
+                console.error('Error sending test message:', error);
+                statusDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                testButton.disabled = false;
+                testButton.textContent = 'Send Test Message';
             }
         }
         
